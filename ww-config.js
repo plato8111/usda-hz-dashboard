@@ -1,59 +1,32 @@
 export default {
   editor: {
     label: {
-      en: "USDA Hardiness Zone Finder",
+      en: "USDA Hardiness Zone Dashboard",
     },
-    icon: "fontawesome/solid/map-marked-alt",
+    icon: "fontawesome/solid/chart-area",
   },
   properties: {
-    // === LOCATION INPUT (From Map Component) ===
-    inputLatitude: {
-      label: { en: "Input Latitude" },
-      type: "Number",
+    // ========================================
+    // DATA PROPERTIES (from Finder component)
+    // ========================================
+
+    currentLocation: {
+      label: { en: "Current Location" },
+      type: "Object",
       section: "settings",
       bindable: true,
       defaultValue: null,
       /* wwEditor:start */
       bindingValidation: {
-        type: "number",
-        tooltip: "Bind to map's clicked/geolocation latitude"
+        type: "object",
+        tooltip: "Bind to [Finder].currentLocation - Object with lat/lng"
       },
-      propertyHelp: "Connect to your map component's latitude output (e.g., [Map].clickedLocation.lat)"
+      propertyHelp: "Connect to USDA HZ Finder component's currentLocation output"
       /* wwEditor:end */
     },
 
-    inputLongitude: {
-      label: { en: "Input Longitude" },
-      type: "Number",
-      section: "settings",
-      bindable: true,
-      defaultValue: null,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: "number",
-        tooltip: "Bind to map's clicked/geolocation longitude"
-      },
-      propertyHelp: "Connect to your map component's longitude output (e.g., [Map].clickedLocation.lng)"
-      /* wwEditor:end */
-    },
-
-    autoCalculateOnLocationChange: {
-      label: { en: "Auto-Calculate on Location Change" },
-      type: "OnOff",
-      section: "settings",
-      defaultValue: true,
-      bindable: true,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: "boolean"
-      },
-      propertyHelp: "Automatically calculate zone when inputLatitude/inputLongitude change"
-      /* wwEditor:end */
-    },
-
-    // === SUPABASE CONFIGURATION ===
-    supabaseUrl: {
-      label: { en: "Supabase URL" },
+    calculatedZone: {
+      label: { en: "Calculated Zone" },
       type: "Text",
       section: "settings",
       bindable: true,
@@ -61,13 +34,29 @@ export default {
       /* wwEditor:start */
       bindingValidation: {
         type: "string",
-        tooltip: "Your Supabase project URL"
+        tooltip: "Bind to [Finder].calculatedZone - e.g., '7a', '8b'"
       },
-      propertyHelp: "Enter your Supabase project URL (e.g., https://xxx.supabase.co)"
+      propertyHelp: "Connect to USDA HZ Finder component's calculatedZone output"
       /* wwEditor:end */
     },
-    supabaseAnonKey: {
-      label: { en: "Supabase Anon Key" },
+
+    minTemperature: {
+      label: { en: "Minimum Temperature" },
+      type: "Number",
+      section: "settings",
+      bindable: true,
+      defaultValue: null,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "number",
+        tooltip: "Bind to [Finder].minTemperature"
+      },
+      propertyHelp: "Raw minimum temperature value from Finder"
+      /* wwEditor:end */
+    },
+
+    minTemperatureConverted: {
+      label: { en: "Min Temperature (Converted)" },
       type: "Text",
       section: "settings",
       bindable: true,
@@ -75,249 +64,253 @@ export default {
       /* wwEditor:start */
       bindingValidation: {
         type: "string",
-        tooltip: "Your Supabase anonymous key"
+        tooltip: "Bind to [Finder].minTemperatureConverted"
       },
-      propertyHelp: "Enter your Supabase anonymous/public key"
+      propertyHelp: "Temperature converted to user's preferred unit"
       /* wwEditor:end */
     },
 
-    // === UNITS ===
-    temperatureUnit: {
-      label: { en: "Temperature Unit" },
-      type: "TextSelect",
+    temperatureUnitLabel: {
+      label: { en: "Temperature Unit Label" },
+      type: "Text",
       section: "settings",
-      options: {
-        options: [
-          { value: "F", label: "Fahrenheit (°F)" },
-          { value: "C", label: "Celsius (°C)" }
-        ]
-      },
-      defaultValue: "F",
       bindable: true,
+      defaultValue: "°F",
       /* wwEditor:start */
       bindingValidation: {
         type: "string",
-        tooltip: "Valid values: F | C"
-      },
-      propertyHelp: "Choose temperature display unit"
+        tooltip: "Bind to [Finder].temperatureUnitLabel - e.g., '°F' or '°C'"
+      }
       /* wwEditor:end */
     },
 
-    distanceUnit: {
-      label: { en: "Distance Unit" },
-      type: "TextSelect",
+    availableStations: {
+      label: { en: "Available Stations (Raw)" },
+      type: "Array",
       section: "settings",
-      options: {
-        options: [
-          { value: "km", label: "Kilometers (km)" },
-          { value: "miles", label: "Miles (mi)" }
-        ]
+      bindable: true,
+      defaultValue: [],
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "array",
+        tooltip: "Bind to [Finder].availableStations"
       },
+      propertyHelp: "Raw station data from Finder"
+      /* wwEditor:end */
+    },
+
+    availableStationsConverted: {
+      label: { en: "Available Stations (Converted)" },
+      type: "Array",
+      section: "settings",
+      bindable: true,
+      defaultValue: [],
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "array",
+        tooltip: "Bind to [Finder].availableStationsConverted"
+      },
+      propertyHelp: "Stations with converted distance units"
+      /* wwEditor:end */
+    },
+
+    distanceUnitLabel: {
+      label: { en: "Distance Unit Label" },
+      type: "Text",
+      section: "settings",
+      bindable: true,
       defaultValue: "km",
-      bindable: true,
       /* wwEditor:start */
       bindingValidation: {
         type: "string",
-        tooltip: "Valid values: km | miles"
-      },
-      propertyHelp: "Choose distance display unit"
-      /* wwEditor:end */
-    },
-
-    // === CALCULATION MODE ===
-    calculationMode: {
-      label: { en: "Calculation Mode" },
-      type: "TextSelect",
-      section: "settings",
-      options: {
-        options: [
-          { value: "auto", label: "Auto (Smart Selection)" },
-          { value: "stations", label: "Find Stations" },
-          { value: "noaa", label: "NOAA Historical Data" },
-          { value: "weatherapi", label: "WeatherAPI" },
-          { value: "compare", label: "Compare Methods" }
-        ]
-      },
-      defaultValue: "auto",
-      bindable: true,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: "string",
-        tooltip: "Valid values: auto | stations | noaa | weatherapi | compare"
-      },
-      propertyHelp: "Auto mode automatically selects the best data source available"
-      /* wwEditor:end */
-    },
-
-    // === LOCATION SETTINGS ===
-    searchRadius: {
-      label: { en: "Search Radius (degrees)" },
-      type: "Number",
-      section: "settings",
-      min: 0.5,
-      max: 10,
-      step: 0.5,
-      defaultValue: 2,
-      bindable: true,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: "number",
-        tooltip: "Search radius between 0.5 and 10 degrees"
-      },
-      propertyHelp: "1 degree ≈ 111 km. Larger radius finds more stations but may be less accurate."
-      /* wwEditor:end */
-    },
-
-    stationLimit: {
-      label: { en: "Max Stations" },
-      type: "Number",
-      section: "settings",
-      min: 5,
-      max: 100,
-      step: 5,
-      defaultValue: 10,
-      bindable: true,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: "number",
-        tooltip: "Maximum number of stations to display"
+        tooltip: "Bind to [Finder].distanceUnitLabel - e.g., 'km' or 'mi'"
       }
       /* wwEditor:end */
     },
 
-    analysisYears: {
-      label: { en: "Analysis Years" },
-      type: "Number",
-      section: "settings",
-      min: 5,
-      max: 50,
-      step: 5,
-      defaultValue: 30,
-      bindable: true,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: "number",
-        tooltip: "Number of years for historical analysis (5-50)"
-      },
-      propertyHelp: "More years = more accurate, but may not be available for all stations"
-      /* wwEditor:end */
-    },
-
-    // === OPTIONAL ENHANCEMENTS ===
-    userElevation: {
-      label: { en: "Elevation (meters)" },
-      type: "Number",
+    selectedStation: {
+      label: { en: "Selected Station" },
+      type: "Object",
       section: "settings",
       bindable: true,
       defaultValue: null,
       /* wwEditor:start */
       bindingValidation: {
-        type: "number",
-        tooltip: "Optional: User's elevation for microclimate adjustment"
+        type: "object",
+        tooltip: "Bind to [Finder].selectedStation"
       },
-      propertyHelp: "Leave empty to skip elevation adjustment"
+      propertyHelp: "Currently selected weather station"
       /* wwEditor:end */
     },
 
-    enableMicroclimate: {
-      label: { en: "Enable Microclimate Factors" },
-      type: "OnOff",
+    frostDates: {
+      label: { en: "Frost Dates" },
+      type: "Object",
       section: "settings",
-      defaultValue: false,
       bindable: true,
+      defaultValue: null,
       /* wwEditor:start */
       bindingValidation: {
-        type: "boolean"
-      }
+        type: "object",
+        tooltip: "Bind to [Finder].frostDates - Object with lastSpringFrost, firstFallFrost"
+      },
+      propertyHelp: "Frost date information from Finder"
       /* wwEditor:end */
     },
 
-    nearWater: {
-      label: { en: "Near Water" },
-      type: "OnOff",
+    calendarEvents: {
+      label: { en: "Calendar Events" },
+      type: "Array",
       section: "settings",
-      defaultValue: false,
       bindable: true,
-      hidden: (content) => !content?.enableMicroclimate,
+      defaultValue: [],
       /* wwEditor:start */
       bindingValidation: {
-        type: "boolean"
-      }
+        type: "array",
+        tooltip: "Bind to [Finder].calendarEvents"
+      },
+      propertyHelp: "Planting calendar events"
       /* wwEditor:end */
     },
 
-    urbanArea: {
-      label: { en: "Urban Area" },
-      type: "OnOff",
+    moistureZone: {
+      label: { en: "Moisture Zone" },
+      type: "Object",
       section: "settings",
-      defaultValue: false,
       bindable: true,
-      hidden: (content) => !content?.enableMicroclimate,
+      defaultValue: null,
       /* wwEditor:start */
       bindingValidation: {
-        type: "boolean"
-      }
+        type: "object",
+        tooltip: "Bind to [Finder].moistureZone"
+      },
+      propertyHelp: "Moisture zone information"
       /* wwEditor:end */
     },
 
-    windExposed: {
-      label: { en: "Wind Exposed" },
-      type: "OnOff",
+    extremeWeather: {
+      label: { en: "Extreme Weather Events" },
+      type: "Array",
       section: "settings",
-      defaultValue: false,
       bindable: true,
-      hidden: (content) => !content?.enableMicroclimate,
+      defaultValue: [],
       /* wwEditor:start */
       bindingValidation: {
-        type: "boolean"
-      }
+        type: "array",
+        tooltip: "Bind to [Finder].extremeWeather"
+      },
+      propertyHelp: "Historical extreme weather data"
       /* wwEditor:end */
     },
 
-    southFacing: {
-      label: { en: "South Facing" },
-      type: "OnOff",
+    analysisResult: {
+      label: { en: "Analysis Result" },
+      type: "Object",
       section: "settings",
-      defaultValue: false,
       bindable: true,
-      hidden: (content) => !content?.enableMicroclimate,
+      defaultValue: null,
       /* wwEditor:start */
       bindingValidation: {
-        type: "boolean"
-      }
+        type: "object",
+        tooltip: "Bind to [Finder].analysisResult"
+      },
+      propertyHelp: "Full analysis result object from Finder"
       /* wwEditor:end */
     },
 
-    // === MAP SETTINGS ===
-    mapHeight: {
-      label: { en: "Map Height" },
-      type: "Length",
+    // ========================================
+    // STATE PROPERTIES
+    // ========================================
+
+    status: {
+      label: { en: "Status" },
+      type: "Text",
+      section: "settings",
+      bindable: true,
+      defaultValue: "idle",
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Bind to [Finder].status - 'idle' | 'loading' | 'success' | 'error'"
+      },
+      propertyHelp: "Current status of data loading"
+      /* wwEditor:end */
+    },
+
+    isLoading: {
+      label: { en: "Is Loading" },
+      type: "OnOff",
+      section: "settings",
+      bindable: true,
+      defaultValue: false,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "boolean",
+        tooltip: "Bind to [Finder].isLoading"
+      },
+      propertyHelp: "Shows loading state when true"
+      /* wwEditor:end */
+    },
+
+    errorMessage: {
+      label: { en: "Error Message" },
+      type: "Text",
+      section: "settings",
+      bindable: true,
+      defaultValue: "",
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Bind to [Finder].errorMessage"
+      },
+      propertyHelp: "Error message from Finder component"
+      /* wwEditor:end */
+    },
+
+    errorSuggestions: {
+      label: { en: "Error Suggestions" },
+      type: "Array",
+      section: "settings",
+      bindable: true,
+      defaultValue: [],
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "array",
+        tooltip: "Bind to [Finder].errorSuggestions"
+      },
+      propertyHelp: "Suggested fixes for errors"
+      /* wwEditor:end */
+    },
+
+    // ========================================
+    // DISPLAY SETTINGS
+    // ========================================
+
+    theme: {
+      label: { en: "Theme" },
+      type: "TextSelect",
       section: "style",
-      defaultValue: "400px",
+      options: {
+        options: [
+          { value: "light", label: "Light" },
+          { value: "dark", label: "Dark" }
+        ]
+      },
+      defaultValue: "light",
       bindable: true,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Valid values: light | dark"
+      }
+      /* wwEditor:end */
     },
 
-    dashboardHeight: {
-      label: { en: "Dashboard Height" },
-      type: "Length",
-      section: "style",
-      defaultValue: "600px",
-      bindable: true,
-    },
-
-    primaryColor: {
-      label: { en: "Primary Color" },
+    accentColor: {
+      label: { en: "Accent Color" },
       type: "Color",
       section: "style",
       defaultValue: "#22c55e",
-      bindable: true,
-    },
-
-    secondaryColor: {
-      label: { en: "Secondary Color" },
-      type: "Color",
-      section: "style",
-      defaultValue: "#3b82f6",
       bindable: true,
     },
 
@@ -329,6 +322,22 @@ export default {
       bindable: true,
     },
 
+    cardBackgroundColor: {
+      label: { en: "Card Background Color" },
+      type: "Color",
+      section: "style",
+      defaultValue: "#f9fafb",
+      bindable: true,
+    },
+
+    textColor: {
+      label: { en: "Text Color" },
+      type: "Color",
+      section: "style",
+      defaultValue: "#111827",
+      bindable: true,
+    },
+
     borderRadius: {
       label: { en: "Border Radius" },
       type: "Length",
@@ -337,142 +346,104 @@ export default {
       bindable: true,
     },
 
-    // === UI TOGGLES ===
-    showGeolocationButton: {
-      label: { en: "Show Geolocation Button" },
+    // ========================================
+    // CARD VISIBILITY TOGGLES
+    // ========================================
+
+    showLocationCard: {
+      label: { en: "Show Location Card" },
       type: "OnOff",
       section: "settings",
       defaultValue: true,
       bindable: true,
     },
 
-    showModeSelector: {
-      label: { en: "Show Mode Selector" },
+    showZoneCard: {
+      label: { en: "Show Zone Card" },
       type: "OnOff",
       section: "settings",
       defaultValue: true,
       bindable: true,
     },
 
-    showStationQuality: {
-      label: { en: "Show Station Quality" },
+    showStationsCard: {
+      label: { en: "Show Stations Card" },
       type: "OnOff",
       section: "settings",
       defaultValue: true,
       bindable: true,
     },
 
-    showCalendarEvents: {
-      label: { en: "Show Calendar Events" },
+    showFrostDatesCard: {
+      label: { en: "Show Frost Dates Card" },
       type: "OnOff",
       section: "settings",
       defaultValue: true,
       bindable: true,
     },
 
-    autoCalculateOnLoad: {
-      label: { en: "Auto-Calculate on Load" },
+    showMoistureCard: {
+      label: { en: "Show Moisture Card" },
+      type: "OnOff",
+      section: "settings",
+      defaultValue: true,
+      bindable: true,
+    },
+
+    showCalendarCard: {
+      label: { en: "Show Calendar Card" },
+      type: "OnOff",
+      section: "settings",
+      defaultValue: true,
+      bindable: true,
+    },
+
+    showExtremeWeatherCard: {
+      label: { en: "Show Extreme Weather Card" },
+      type: "OnOff",
+      section: "settings",
+      defaultValue: true,
+      bindable: true,
+    },
+
+    // ========================================
+    // UI OPTIONS
+    // ========================================
+
+    compactMode: {
+      label: { en: "Compact Mode" },
       type: "OnOff",
       section: "settings",
       defaultValue: false,
       bindable: true,
       /* wwEditor:start */
-      propertyHelp: "Automatically request geolocation and calculate zone when component loads"
+      propertyHelp: "Enable compact layout for smaller spaces"
+      /* wwEditor:end */
+    },
+
+    animationsEnabled: {
+      label: { en: "Enable Animations" },
+      type: "OnOff",
+      section: "settings",
+      defaultValue: true,
+      bindable: true,
+      /* wwEditor:start */
+      propertyHelp: "Toggle smooth animations and transitions"
       /* wwEditor:end */
     },
   },
 
-  // === ACTION PROPERTIES (Methods users can trigger) ===
-  actions: [
-    {
-      name: "requestGeolocation",
-      label: { en: "Request Geolocation" },
-      /* wwEditor:start */
-      propertyHelp: "Trigger browser geolocation prompt and calculate zone"
-      /* wwEditor:end */
-    },
-    {
-      name: "calculateForLocation",
-      label: { en: "Calculate for Location" },
-      parameters: [
-        { name: "lat", type: "number" },
-        { name: "lng", type: "number" }
-      ],
-      /* wwEditor:start */
-      propertyHelp: "Calculate hardiness zone for specific coordinates"
-      /* wwEditor:end */
-    },
-    {
-      name: "selectStation",
-      label: { en: "Select Station" },
-      parameters: [
-        { name: "stationId", type: "string" }
-      ],
-      /* wwEditor:start */
-      propertyHelp: "Calculate zone using specific NOAA station"
-      /* wwEditor:end */
-    },
-    {
-      name: "clearResults",
-      label: { en: "Clear Results" },
-      /* wwEditor:start */
-      propertyHelp: "Reset all calculation results"
-      /* wwEditor:end */
-    }
-  ],
-
   triggerEvents: [
     {
-      name: "location-selected",
-      label: { en: "Location Selected" },
-      event: {
-        lat: 0,
-        lng: 0,
-        source: "click" // "click" | "geolocation"
-      },
-    },
-    {
-      name: "zone-calculated",
-      label: { en: "Zone Calculated" },
-      event: {
-        zone: "",
-        minTemp: 0,
-        mode: "",
-        location: {}
-      },
-    },
-    {
-      name: "stations-found",
-      label: { en: "Stations Found" },
-      event: {
-        stations: [],
-        totalFound: 0
-      },
-    },
-    {
-      name: "station-selected",
-      label: { en: "Station Selected" },
+      name: "station-clicked",
+      label: { en: "Station Clicked" },
       event: {
         stationId: "",
-        name: "",
-        distance: 0,
-        quality: {}
+        station: {}
       },
-    },
-    {
-      name: "calculation-error",
-      label: { en: "Calculation Error" },
-      event: {
-        error: "",
-        suggestions: []
-      },
-    },
-    {
-      name: "geolocation-denied",
-      label: { en: "Geolocation Denied" },
-      event: {
-        message: ""
-      },
+      /* wwEditor:start */
+      propertyHelp: "Triggered when user clicks a weather station in the list"
+      /* wwEditor:end */
     },
   ],
 };
