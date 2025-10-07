@@ -65,10 +65,13 @@
               <div class="option-badge auto">⚡ Recommended</div>
               <strong>Option A: Auto-Connect</strong>
               <ol class="helper-steps">
-                <li>Click the <strong>Auto-Connect to Finder</strong> action below</li>
-                <li>Select your Finder component from the popup</li>
-                <li>Done! All properties auto-bound</li>
+                <li>Click the button below</li>
+                <li>Select your Finder component</li>
+                <li>All properties auto-bound ✨</li>
               </ol>
+              <button @click="autoConnectToFinder" class="btn-auto-connect">
+                🔗 Auto-Connect to Finder
+              </button>
             </div>
             <div class="helper-option">
               <div class="option-badge manual">🔧 Manual</div>
@@ -1111,7 +1114,7 @@ export default {
     }
 
     .helper-steps {
-      margin: 0;
+      margin: 0 0 16px 0;
       padding-left: 20px;
       font-size: 13px;
       color: #475569;
@@ -1127,6 +1130,31 @@ export default {
           color: #1e3a8a;
           font-size: 13px;
         }
+      }
+    }
+
+    .btn-auto-connect {
+      width: 100%;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+
+      &:hover {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        box-shadow: 0 4px 8px rgba(34, 197, 94, 0.4);
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
       }
     }
   }
