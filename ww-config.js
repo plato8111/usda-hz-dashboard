@@ -7,26 +7,8 @@ export default {
   },
   properties: {
     // ========================================
-    // AUTO-BIND HELPER
-    // ========================================
-
-    finderComponentId: {
-      label: { en: "Finder Component" },
-      type: "Text",
-      section: "settings",
-      bindable: true,
-      defaultValue: "",
-      /* wwEditor:start */
-      bindingValidation: {
-        type: "string",
-        tooltip: "Select the USDA HZ Finder component to auto-connect"
-      },
-      propertyHelp: "Select your Finder component, then click 'Auto-Connect' below to automatically bind all data properties"
-      /* wwEditor:end */
-    },
-
-    // ========================================
     // DATA PROPERTIES (from Finder component)
+    // Note: Use Auto-Connect action to bind all properties at once
     // ========================================
 
     currentLocation: {

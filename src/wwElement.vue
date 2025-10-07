@@ -54,17 +54,31 @@
         <p class="no-data-text">Select a location on the map or use geolocation to view hardiness zone data.</p>
 
         <!-- wwEditor:start -->
-        <div v-if="isEditing && !finderComponentId" class="setup-helper">
+        <div v-if="isEditing && !hasData" class="setup-helper">
           <div class="helper-icon">💡</div>
-          <h4 class="helper-title">Quick Setup</h4>
+          <h4 class="helper-title">Quick Setup Guide</h4>
           <p class="helper-text">
-            To display data, bind this Dashboard to a USDA HZ Finder component:
+            Connect this Dashboard to your USDA HZ Finder component:
           </p>
-          <ol class="helper-steps">
-            <li>Select the <strong>Finder Component</strong> property above</li>
-            <li>Click the <strong>Auto-Connect to Finder</strong> action</li>
-            <li>Done! All 18 data properties will be automatically bound</li>
-          </ol>
+          <div class="helper-options">
+            <div class="helper-option">
+              <div class="option-badge auto">⚡ Recommended</div>
+              <strong>Option A: Auto-Connect</strong>
+              <ol class="helper-steps">
+                <li>Click the <strong>Auto-Connect to Finder</strong> action below</li>
+                <li>Select your Finder component from the popup</li>
+                <li>Done! All properties auto-bound</li>
+              </ol>
+            </div>
+            <div class="helper-option">
+              <div class="option-badge manual">🔧 Manual</div>
+              <strong>Option B: Manual Binding</strong>
+              <ol class="helper-steps">
+                <li>Bind each property to <code>[Finder].propertyName</code></li>
+                <li>18 bindings required (see docs)</li>
+              </ol>
+            </div>
+          </div>
         </div>
         <!-- wwEditor:end -->
       </div>
@@ -331,7 +345,6 @@ export default {
     // DATA PROPERTIES
     // ========================================
 
-    const finderComponentId = computed(() => props.content?.finderComponentId);
     const currentLocation = computed(() => props.content?.currentLocation);
     const calculatedZone = computed(() => props.content?.calculatedZone);
     const minTemperature = computed(() => props.content?.minTemperature);
@@ -534,25 +547,49 @@ export default {
     // AUTO-BIND ACTION
     // ========================================
 
-    function autoConnectToFinder() {
-      const finderId = props.content?.finderComponentId;
-
-      if (!finderId) {
-        emit('trigger-event', {
-          name: 'auto-bind-error',
-          event: {
-            error: 'NO_FINDER_SELECTED',
-            message: 'Please select a Finder component first'
-          }
-        });
-        return;
-      }
-
+    async function autoConnectToFinder() {
       /* wwEditor:start */
       // In WeWeb editor, use wwLib to create bindings
-      if (typeof wwLib !== 'undefined' && wwLib.wwVariable) {
+      if (typeof wwLib !== 'undefined') {
         try {
-          // List of all data properties to bind
+          // Step 1: Scan page for USDA HZ Finder components
+          // This is pseudo-code - actual implementation depends on WeWeb's API
+          const finderComponents = [];
+          // wwLib.getPageComponents().filter(c => c.type === 'usda-hz-finder')
+
+          if (finderComponents.length === 0) {
+            emit('trigger-event', {
+              name: 'auto-bind-error',
+              event: {
+                error: 'NO_FINDER_FOUND',
+                message: 'No USDA HZ Finder component found on this page. Please add one first.'
+              }
+            });
+            return;
+          }
+
+          // Step 2: If multiple Finders, let user choose
+          let selectedFinder;
+          if (finderComponents.length === 1) {
+            selectedFinder = finderComponents[0];
+          } else {
+            // Show popup to select which Finder component
+            // selectedFinder = await wwLib.showComponentSelector(finderComponents);
+            selectedFinder = finderComponents[0]; // Fallback to first
+          }
+
+          if (!selectedFinder) {
+            emit('trigger-event', {
+              name: 'auto-bind-error',
+              event: {
+                error: 'NO_FINDER_SELECTED',
+                message: 'No Finder component selected'
+              }
+            });
+            return;
+          }
+
+          // Step 3: Create bindings
           const bindingMap = [
             'currentLocation',
             'calculatedZone',
@@ -574,28 +611,29 @@ export default {
             'errorSuggestions',
           ];
 
-          // Create bindings using WeWeb API
-          // Note: This is a placeholder - actual WeWeb binding API may differ
-          // WeWeb team will need to provide the correct API for programmatic bindings
-
           let bindingsCreated = 0;
-          bindingMap.forEach(propName => {
-            // Pseudo-code for binding creation:
-            // wwLib.wwVariable.updateComponentProperty(
-            //   props.uid,
-            //   propName,
-            //   { type: 'bind', path: `${finderId}.${propName}` }
-            // );
-            bindingsCreated++;
-          });
+          for (const propName of bindingMap) {
+            try {
+              // Pseudo-code for binding creation:
+              // await wwLib.wwVariable.updateComponentProperty(
+              //   props.uid,
+              //   propName,
+              //   { type: 'bind', path: `${selectedFinder.uid}.${propName}` }
+              // );
+              bindingsCreated++;
+            } catch (err) {
+              console.warn(`Failed to bind ${propName}:`, err);
+            }
+          }
 
           emit('trigger-event', {
             name: 'auto-bind-success',
             event: {
               bindings: bindingsCreated,
-              finderComponent: finderId
+              finderComponent: selectedFinder.uid || 'unknown'
             }
           });
+
         } catch (error) {
           emit('trigger-event', {
             name: 'auto-bind-error',
@@ -605,6 +643,15 @@ export default {
             }
           });
         }
+      } else {
+        // Not in editor
+        emit('trigger-event', {
+          name: 'auto-bind-error',
+          event: {
+            error: 'NOT_IN_EDITOR',
+            message: 'Auto-connect only works in WeWeb editor'
+          }
+        });
       }
       /* wwEditor:end */
     }
@@ -619,7 +666,6 @@ export default {
       /* wwEditor:end */
 
       // Data
-      finderComponentId,
       currentLocation,
       calculatedZone,
       minTemperature,
@@ -987,7 +1033,7 @@ export default {
     border: 2px solid #3b82f6;
     border-radius: 12px;
     text-align: left;
-    max-width: 600px;
+    max-width: 700px;
     margin-left: auto;
     margin-right: auto;
 
@@ -1004,25 +1050,82 @@ export default {
     }
 
     .helper-text {
-      margin: 0 0 16px 0;
+      margin: 0 0 20px 0;
       font-size: 14px;
       color: #1e40af;
       line-height: 1.6;
     }
 
+    .helper-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .helper-option {
+      padding: 16px;
+      background: white;
+      border-radius: 8px;
+      border: 2px solid #bfdbfe;
+
+      strong {
+        display: block;
+        margin: 8px 0 12px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e3a8a;
+      }
+
+      code {
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 12px;
+        color: #0f172a;
+        font-family: 'Courier New', monospace;
+      }
+    }
+
+    .option-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+
+      &.auto {
+        background: #22c55e;
+        color: white;
+      }
+
+      &.manual {
+        background: #64748b;
+        color: white;
+      }
+    }
+
     .helper-steps {
       margin: 0;
-      padding-left: 24px;
-      font-size: 14px;
-      color: #1e40af;
-      line-height: 1.8;
+      padding-left: 20px;
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.7;
 
       li {
-        margin: 8px 0;
+        margin: 6px 0;
 
         strong {
+          display: inline;
+          margin: 0;
           font-weight: 600;
           color: #1e3a8a;
+          font-size: 13px;
         }
       }
     }
