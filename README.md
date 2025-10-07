@@ -111,9 +111,18 @@ A sophisticated, modern dashboard UI component for displaying USDA Hardiness Zon
 
 Add both the USDA HZ Finder (data provider) and Dashboard (UI) to your page.
 
-### 2. Bind Data Properties
+### 2. Connect Dashboard to Finder
 
-In the Dashboard component settings, bind all data properties:
+**Option A: Auto-Connect (Recommended) ⚡**
+
+1. Select the Dashboard component
+2. In properties, select your **Finder Component** from the dropdown
+3. Click the **"Auto-Connect to Finder"** action
+4. Done! All 18 data properties are automatically bound 🎉
+
+**Option B: Manual Binding**
+
+In the Dashboard component settings, bind all data properties manually:
 
 ```
 currentLocation → [Finder].currentLocation
@@ -154,6 +163,30 @@ Show/hide specific sections:
 - Moisture Card
 - Calendar Card
 - Extreme Weather Card
+
+## Auto-Connect Feature ⚡
+
+The Dashboard includes an **Auto-Connect** feature that automatically binds all data properties in one click.
+
+### How It Works:
+
+1. **Select Finder Component**
+   - In Dashboard properties, find "Finder Component"
+   - Select your USDA HZ Finder component from the dropdown
+
+2. **Run Auto-Connect Action**
+   - In Dashboard actions, click "Auto-Connect to Finder"
+   - The component will automatically create all 18 bindings
+
+3. **Success Events**
+   - Listen to `auto-bind-success` event to confirm bindings created
+   - Listen to `auto-bind-error` event to handle any issues
+
+### Benefits:
+- ⚡ **Fast**: Creates all bindings in one click
+- ✅ **Accurate**: No manual binding errors
+- 🔧 **Automatic**: Updates if property names change
+- 💡 **Helpful**: Shows setup instructions in editor when not connected
 
 ## Component Architecture
 

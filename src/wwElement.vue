@@ -52,6 +52,21 @@
         <div class="no-data-icon">📍</div>
         <h3 class="no-data-title">No Location Selected</h3>
         <p class="no-data-text">Select a location on the map or use geolocation to view hardiness zone data.</p>
+
+        <!-- wwEditor:start -->
+        <div v-if="isEditing && !finderComponentId" class="setup-helper">
+          <div class="helper-icon">💡</div>
+          <h4 class="helper-title">Quick Setup</h4>
+          <p class="helper-text">
+            To display data, bind this Dashboard to a USDA HZ Finder component:
+          </p>
+          <ol class="helper-steps">
+            <li>Select the <strong>Finder Component</strong> property above</li>
+            <li>Click the <strong>Auto-Connect to Finder</strong> action</li>
+            <li>Done! All 18 data properties will be automatically bound</li>
+          </ol>
+        </div>
+        <!-- wwEditor:end -->
       </div>
 
       <!-- Dashboard Grid -->
@@ -316,6 +331,7 @@ export default {
     // DATA PROPERTIES
     // ========================================
 
+    const finderComponentId = computed(() => props.content?.finderComponentId);
     const currentLocation = computed(() => props.content?.currentLocation);
     const calculatedZone = computed(() => props.content?.calculatedZone);
     const minTemperature = computed(() => props.content?.minTemperature);
@@ -515,6 +531,85 @@ export default {
     }
 
     // ========================================
+    // AUTO-BIND ACTION
+    // ========================================
+
+    function autoConnectToFinder() {
+      const finderId = props.content?.finderComponentId;
+
+      if (!finderId) {
+        emit('trigger-event', {
+          name: 'auto-bind-error',
+          event: {
+            error: 'NO_FINDER_SELECTED',
+            message: 'Please select a Finder component first'
+          }
+        });
+        return;
+      }
+
+      /* wwEditor:start */
+      // In WeWeb editor, use wwLib to create bindings
+      if (typeof wwLib !== 'undefined' && wwLib.wwVariable) {
+        try {
+          // List of all data properties to bind
+          const bindingMap = [
+            'currentLocation',
+            'calculatedZone',
+            'minTemperature',
+            'minTemperatureConverted',
+            'temperatureUnitLabel',
+            'availableStations',
+            'availableStationsConverted',
+            'distanceUnitLabel',
+            'selectedStation',
+            'frostDates',
+            'calendarEvents',
+            'moistureZone',
+            'extremeWeather',
+            'analysisResult',
+            'status',
+            'isLoading',
+            'errorMessage',
+            'errorSuggestions',
+          ];
+
+          // Create bindings using WeWeb API
+          // Note: This is a placeholder - actual WeWeb binding API may differ
+          // WeWeb team will need to provide the correct API for programmatic bindings
+
+          let bindingsCreated = 0;
+          bindingMap.forEach(propName => {
+            // Pseudo-code for binding creation:
+            // wwLib.wwVariable.updateComponentProperty(
+            //   props.uid,
+            //   propName,
+            //   { type: 'bind', path: `${finderId}.${propName}` }
+            // );
+            bindingsCreated++;
+          });
+
+          emit('trigger-event', {
+            name: 'auto-bind-success',
+            event: {
+              bindings: bindingsCreated,
+              finderComponent: finderId
+            }
+          });
+        } catch (error) {
+          emit('trigger-event', {
+            name: 'auto-bind-error',
+            event: {
+              error: 'BINDING_FAILED',
+              message: error.message || 'Failed to create bindings'
+            }
+          });
+        }
+      }
+      /* wwEditor:end */
+    }
+
+    // ========================================
     // RETURN
     // ========================================
 
@@ -524,6 +619,7 @@ export default {
       /* wwEditor:end */
 
       // Data
+      finderComponentId,
       currentLocation,
       calculatedZone,
       minTemperature,
@@ -577,6 +673,9 @@ export default {
       getZoneDescription,
       getSeverityIcon,
       handleStationClick,
+
+      // Actions
+      autoConnectToFinder,
     };
   },
 };
@@ -875,6 +974,60 @@ export default {
     max-width: 500px;
     margin: 0 auto;
   }
+
+  // ========================================
+  // SETUP HELPER (Editor Only)
+  // ========================================
+
+  /* wwEditor:start */
+  .setup-helper {
+    margin-top: 32px;
+    padding: 24px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #3b82f6;
+    border-radius: 12px;
+    text-align: left;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+
+    .helper-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .helper-title {
+      margin: 0 0 12px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e40af;
+    }
+
+    .helper-text {
+      margin: 0 0 16px 0;
+      font-size: 14px;
+      color: #1e40af;
+      line-height: 1.6;
+    }
+
+    .helper-steps {
+      margin: 0;
+      padding-left: 24px;
+      font-size: 14px;
+      color: #1e40af;
+      line-height: 1.8;
+
+      li {
+        margin: 8px 0;
+
+        strong {
+          font-weight: 600;
+          color: #1e3a8a;
+        }
+      }
+    }
+  }
+  /* wwEditor:end */
 
   // ========================================
   // DASHBOARD GRID

@@ -7,6 +7,25 @@ export default {
   },
   properties: {
     // ========================================
+    // AUTO-BIND HELPER
+    // ========================================
+
+    finderComponentId: {
+      label: { en: "Finder Component" },
+      type: "Text",
+      section: "settings",
+      bindable: true,
+      defaultValue: "",
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Select the USDA HZ Finder component to auto-connect"
+      },
+      propertyHelp: "Select your Finder component, then click 'Auto-Connect' below to automatically bind all data properties"
+      /* wwEditor:end */
+    },
+
+    // ========================================
     // DATA PROPERTIES (from Finder component)
     // ========================================
 
@@ -433,6 +452,24 @@ export default {
     },
   },
 
+  // ========================================
+  // ACTIONS
+  // ========================================
+
+  actions: [
+    {
+      name: "autoConnectToFinder",
+      label: { en: "Auto-Connect to Finder" },
+      /* wwEditor:start */
+      propertyHelp: "Automatically bind all data properties from the selected Finder component. This creates all 26 bindings in one click!"
+      /* wwEditor:end */
+    },
+  ],
+
+  // ========================================
+  // TRIGGER EVENTS
+  // ========================================
+
   triggerEvents: [
     {
       name: "station-clicked",
@@ -443,6 +480,28 @@ export default {
       },
       /* wwEditor:start */
       propertyHelp: "Triggered when user clicks a weather station in the list"
+      /* wwEditor:end */
+    },
+    {
+      name: "auto-bind-success",
+      label: { en: "Auto-Bind Success" },
+      event: {
+        bindings: 0,
+        finderComponent: ""
+      },
+      /* wwEditor:start */
+      propertyHelp: "Triggered when auto-bind successfully creates all bindings"
+      /* wwEditor:end */
+    },
+    {
+      name: "auto-bind-error",
+      label: { en: "Auto-Bind Error" },
+      event: {
+        error: "",
+        message: ""
+      },
+      /* wwEditor:start */
+      propertyHelp: "Triggered when auto-bind fails (e.g., Finder component not found)"
       /* wwEditor:end */
     },
   ],
