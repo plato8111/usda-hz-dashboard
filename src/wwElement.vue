@@ -69,9 +69,19 @@
                 <li>Select your Finder component</li>
                 <li>All properties auto-bound ✨</li>
               </ol>
-              <button @click="autoConnectToFinder" class="btn-auto-connect">
-                🔗 Auto-Connect to Finder
+              <button
+                @click="autoConnectToFinder"
+                class="btn-auto-connect"
+                :class="{ 'loading': autoConnectStatus === 'loading' }"
+                :disabled="autoConnectStatus === 'loading'"
+              >
+                <span v-if="autoConnectStatus === 'loading'">⏳ Connecting...</span>
+                <span v-else>🔗 Auto-Connect to Finder</span>
               </button>
+
+              <div v-if="autoConnectMessage" class="auto-connect-message" :class="`message-${autoConnectStatus}`">
+                {{ autoConnectMessage }}
+              </div>
             </div>
             <div class="helper-option">
               <div class="option-badge manual">🔧 Manual</div>
@@ -445,6 +455,10 @@ export default {
     // Station display logic
     const showAllStations = ref(false);
     const maxStationsDisplay = computed(() => compactMode.value ? 3 : 5);
+
+    // Auto-connect state
+    const autoConnectStatus = ref('idle'); // 'idle' | 'loading' | 'success' | 'error'
+    const autoConnectMessage = ref('');
     const displayedStations = computed(() => {
       const stations = availableStationsConverted.value || [];
       if (showAllStations.value) return stations;
@@ -552,92 +566,105 @@ export default {
 
     async function autoConnectToFinder() {
       /* wwEditor:start */
+      autoConnectStatus.value = 'loading';
+      autoConnectMessage.value = 'Searching for Finder components...';
+
       // In WeWeb editor, use wwLib to create bindings
       if (typeof wwLib !== 'undefined') {
         try {
           // Step 1: Scan page for USDA HZ Finder components
-          // This is pseudo-code - actual implementation depends on WeWeb's API
+          // Note: This is PLACEHOLDER code - WeWeb doesn't expose a component scanning API yet
+          // When WeWeb adds this API, replace the following with actual implementation
           const finderComponents = [];
-          // wwLib.getPageComponents().filter(c => c.type === 'usda-hz-finder')
+          // Real implementation would be:
+          // const finderComponents = wwLib.getPageComponents().filter(c => c.name === 'usda-hz-finder')
 
+          // TEMPORARY: Show message explaining the limitation
+          autoConnectStatus.value = 'error';
+          autoConnectMessage.value = '⚠️ Auto-connect requires WeWeb API support that is not yet available. Please bind properties manually for now.';
+
+          emit('trigger-event', {
+            name: 'auto-bind-error',
+            event: {
+              error: 'API_NOT_AVAILABLE',
+              message: 'WeWeb does not yet expose the required API for programmatic binding. This feature will work once WeWeb adds: 1) Component discovery API, 2) Programmatic binding API. For now, please bind properties manually.'
+            }
+          });
+
+          // When WeWeb API is available, this code will work:
+          /*
           if (finderComponents.length === 0) {
+            autoConnectStatus.value = 'error';
+            autoConnectMessage.value = 'No Finder component found. Please add a USDA HZ Finder component to your page first.';
             emit('trigger-event', {
               name: 'auto-bind-error',
               event: {
                 error: 'NO_FINDER_FOUND',
-                message: 'No USDA HZ Finder component found on this page. Please add one first.'
+                message: 'No USDA HZ Finder component found on this page.'
               }
             });
             return;
           }
 
-          // Step 2: If multiple Finders, let user choose
-          let selectedFinder;
-          if (finderComponents.length === 1) {
-            selectedFinder = finderComponents[0];
-          } else {
-            // Show popup to select which Finder component
-            // selectedFinder = await wwLib.showComponentSelector(finderComponents);
-            selectedFinder = finderComponents[0]; // Fallback to first
-          }
+          autoConnectMessage.value = `Found ${finderComponents.length} Finder component(s). Creating bindings...`;
 
-          if (!selectedFinder) {
-            emit('trigger-event', {
-              name: 'auto-bind-error',
-              event: {
-                error: 'NO_FINDER_SELECTED',
-                message: 'No Finder component selected'
-              }
-            });
-            return;
+          // Step 2: Select Finder
+          let selectedFinder = finderComponents[0];
+          if (finderComponents.length > 1) {
+            // Future: Show popup to select which Finder
+            autoConnectMessage.value = 'Multiple Finders found. Using first one...';
           }
 
           // Step 3: Create bindings
           const bindingMap = [
-            'currentLocation',
-            'calculatedZone',
-            'minTemperature',
-            'minTemperatureConverted',
-            'temperatureUnitLabel',
-            'availableStations',
-            'availableStationsConverted',
-            'distanceUnitLabel',
-            'selectedStation',
-            'frostDates',
-            'calendarEvents',
-            'moistureZone',
-            'extremeWeather',
-            'analysisResult',
-            'status',
-            'isLoading',
-            'errorMessage',
-            'errorSuggestions',
+            'currentLocation', 'calculatedZone', 'minTemperature',
+            'minTemperatureConverted', 'temperatureUnitLabel',
+            'availableStations', 'availableStationsConverted',
+            'distanceUnitLabel', 'selectedStation', 'frostDates',
+            'calendarEvents', 'moistureZone', 'extremeWeather',
+            'analysisResult', 'status', 'isLoading',
+            'errorMessage', 'errorSuggestions'
           ];
 
           let bindingsCreated = 0;
           for (const propName of bindingMap) {
             try {
-              // Pseudo-code for binding creation:
-              // await wwLib.wwVariable.updateComponentProperty(
-              //   props.uid,
-              //   propName,
-              //   { type: 'bind', path: `${selectedFinder.uid}.${propName}` }
-              // );
+              await wwLib.wwVariable.updateComponentProperty(
+                props.uid,
+                propName,
+                { type: 'bind', path: `${selectedFinder.uid}.${propName}` }
+              );
               bindingsCreated++;
+              autoConnectMessage.value = `Creating bindings... (${bindingsCreated}/${bindingMap.length})`;
             } catch (err) {
               console.warn(`Failed to bind ${propName}:`, err);
             }
           }
 
+          autoConnectStatus.value = 'success';
+          autoConnectMessage.value = `✅ Success! Created ${bindingsCreated} bindings to ${selectedFinder.name || 'Finder'}`;
+
           emit('trigger-event', {
             name: 'auto-bind-success',
             event: {
               bindings: bindingsCreated,
-              finderComponent: selectedFinder.uid || 'unknown'
+              finderComponent: selectedFinder.uid
             }
           });
 
+          // Auto-hide success message after 3 seconds
+          setTimeout(() => {
+            if (autoConnectStatus.value === 'success') {
+              autoConnectStatus.value = 'idle';
+              autoConnectMessage.value = '';
+            }
+          }, 3000);
+          */
+
         } catch (error) {
+          autoConnectStatus.value = 'error';
+          autoConnectMessage.value = `❌ Error: ${error.message || 'Failed to create bindings'}`;
+
           emit('trigger-event', {
             name: 'auto-bind-error',
             event: {
@@ -648,6 +675,9 @@ export default {
         }
       } else {
         // Not in editor
+        autoConnectStatus.value = 'error';
+        autoConnectMessage.value = '❌ Auto-connect only works in WeWeb editor';
+
         emit('trigger-event', {
           name: 'auto-bind-error',
           event: {
@@ -715,6 +745,10 @@ export default {
       displayedStations,
       hasMoreStations,
       remainingStationsCount,
+
+      // Auto-connect state
+      autoConnectStatus,
+      autoConnectMessage,
 
       // Helpers
       formatCoordinate,
@@ -1146,15 +1180,53 @@ export default {
       transition: all 0.2s ease;
       box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
 
-      &:hover {
+      &:hover:not(:disabled) {
         background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
         box-shadow: 0 4px 8px rgba(34, 197, 94, 0.4);
         transform: translateY(-1px);
       }
 
-      &:active {
+      &:active:not(:disabled) {
         transform: translateY(0);
         box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+      }
+
+      &.loading {
+        background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+    }
+
+    .auto-connect-message {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: left;
+
+      &.message-loading {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+      }
+
+      &.message-success {
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        color: #166534;
+      }
+
+      &.message-error {
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        color: #991b1b;
       }
     }
   }
